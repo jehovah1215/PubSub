@@ -96,7 +96,7 @@ public class PubSubService {
             if (offset == 0) {
                 offset = this.getOffsetByTopic(key);
             }
-            this.updateOffset(key, messageQueue.size() - 1);
+            this.updateOffset(key, messageQueue.size());
             return messageQueue.subList(offset, messageQueue.size());
         }
 

@@ -1,9 +1,14 @@
 import Message.Message;
 import PubSubService.PubSubService;
+import PublishThread.PublishThread;
 import Publisher.PublisherImpl;
 import Subscriber.Subscriber;
 import Subscriber.SubscriberImpl;
-import Publisher.IPublisher;
+import Publisher.Publisher;
+import SubscriberThread.SubscriberThread;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
@@ -13,21 +18,26 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
 
-        Subscriber s1 = new SubscriberImpl();
-        IPublisher p1 = new PublisherImpl();
-       PubSubService.getServiceInstance().init();
+        PubSubService.getServiceInstance().init();
         PubSubService.getServiceInstance().createTopic("abc");
+        PubSubService.getServiceInstance().createTopic("xyz");
+        Publisher p = new PublisherImpl();
+        Subscriber s1 = new SubscriberImpl();
+        Subscriber s2 = new SubscriberImpl();
+
         s1.addSubscriber("abc");
-        for(int i= 0 ;i < 5 ;i++) {
-            Message message = new Message("abc", "kya " + i);
-            p1.publish(message);
+        s1.addSubscriber("abc");
+        s2.addSubscriber("xyz");
+        ExecutorService publishExecutor =  Executors.newFixedThreadPool(3);
+        for(int i=0;i<100;i++){
+            PublishThread pb = new PublishThread(new Message(i%2==0?"abc":"xyz","msg"+i),p);
+            publishExecutor.execute(pb);
         }
-        Thread.sleep(1000);
-        s1.getMessagesForSubscriberOfTopic("abc", 0);
-        Thread.sleep(1000);
-        p1.publish(new Message("abc", "bhaiiiii"));
-        Thread.sleep(1000);
-        s1.getMessagesForSubscriberOfTopic("abc", 0);
+        ExecutorService subExecutor =  Executors.newFixedThreadPool(2);
+        SubscriberThread sb = new SubscriberThread("abc",0,s1);
+        SubscriberThread sb1 = new SubscriberThread("xyz",2,s2);
+        subExecutor.execute(sb);
+        subExecutor.execute(sb1);
 
 
     }
